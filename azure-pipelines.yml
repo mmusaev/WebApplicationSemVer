@@ -15,9 +15,9 @@ pool:
 variables:
 buildPlatform: 'Any CPU'
 buildConfiguration: 'Release'
-  # Semantic version base - update these for major/minor releases
-  versionMajor: 1
-  versionMinor: 0
+# Semantic version base - update these for major/minor releases
+versionMajor: 1
+versionMinor: 0
 
   # Patch version is auto-incremented from build counter
   versionPatch: $[counter(format('{0}.{1}', variables['versionMajor'], variables['versionMinor']), 0)]
