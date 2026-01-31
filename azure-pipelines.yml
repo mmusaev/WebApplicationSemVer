@@ -13,9 +13,8 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-buildPlatform: 'Any CPU'
-buildConfiguration: 'Release'
-  
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
   
 name: $(Build.BuildId)
 
