@@ -29,7 +29,7 @@ stages:
       fetchDepth: 0
       
     - task: PowerShell@2
-      displayName: 'Read Version from Directory.Build.props'
+      displayName: 'Read Version from Directory.Build.props and Calculate Patch'
       inputs:
         targetType: 'inline'
         script: |
@@ -39,12 +39,15 @@ stages:
           $versionMajor = $buildProps.Project.PropertyGroup.VersionMajor
           $versionMinor = $buildProps.Project.PropertyGroup.VersionMinor
           
-          # Patch version auto-incremented from build counter
-          $versionPatch = $env:BUILD_BUILDNUMBER.Split('.')[-1]
+          # Use a simple incrementing counter for patch
+          # Azure DevOps doesn't have a built-in counter like GitHub's run_number
+          # so we'll use BuildId % 10000 to keep it reasonable
+          $versionPatch = $(Build.BuildId) % 10000
           $semVer = "$versionMajor.$versionMinor.$versionPatch"
           
           Write-Host "Version read from Directory.Build.props: $versionMajor.$versionMinor"
-          Write-Host "Patch version (from build counter): $versionPatch"
+          Write-Host "Build ID: $(Build.BuildId)"
+          Write-Host "Patch version: $versionPatch"
           Write-Host "Semantic Version: $semVer"
           
           # Set pipeline variables
