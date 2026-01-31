@@ -1,0 +1,35 @@
+<Project>
+  <PropertyGroup>
+    <!-- 
+      Semantic Versioning - Update these values to change version for all projects
+      
+      For SDK-style projects (Database): Version is applied automatically
+      For traditional .NET Framework projects (WebApplicationSemVer): Manually sync AssemblyInfo.cs
+      
+      SemVer Rules:
+      - MAJOR: Breaking changes (1.0.0 ? 2.0.0)
+      - MINOR: New features, backwards compatible (1.0.0 ? 1.1.0)
+      - PATCH: Bug fixes (1.0.0 ? 1.0.1)
+    -->
+    <VersionMajor>1</VersionMajor>
+    <VersionMinor>0</VersionMinor>
+    <VersionPatch>1</VersionPatch>
+    <VersionSuffix></VersionSuffix> <!-- Optional: beta, rc1, etc. -->
+    
+    <!-- Computed Version Properties -->
+    <VersionPrefix>$(VersionMajor).$(VersionMinor).$(VersionPatch)</VersionPrefix>
+    <Version Condition="'$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
+    <Version Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
+    
+    <!-- Assembly Versions -->
+    <AssemblyVersion>$(VersionMajor).$(VersionMinor).0.0</AssemblyVersion>
+    <FileVersion>$(VersionPrefix).0</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+    
+    <!-- Product Information -->
+    <Company></Company>
+    <Product>WebApplicationSemVer</Product>
+    <Copyright>Copyright © 2026</Copyright>
+  </PropertyGroup>
+</Project>
+
