@@ -42,11 +42,13 @@ stages:
       displayName: 'Restore NuGet Packages for WebApplicationSemVer'
       inputs:
         restoreSolution: 'WebApplicationSemVer/WebApplicationSemVer.csproj'
+        restoreDirectory: '$(Build.SourcesDirectory)/packages'
         
     - task: NuGetCommand@2
       displayName: 'Restore NuGet Packages for Database'
       inputs:
         restoreSolution: 'Database/Database.csproj'
+        restoreDirectory: '$(Build.SourcesDirectory)/packages'
         
     - task: PowerShell@2
       displayName: 'Update Version in Directory.Build.props'
