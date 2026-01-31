@@ -12,9 +12,10 @@
       - PATCH: Bug fixes (1.0.0 → 1.0.1)
       
       CI/CD Note:
-      - In Azure DevOps, VersionPatch is auto-incremented using build counter
+      - Pipelines automatically read VersionMajor/VersionMinor from this file
+      - VersionPatch is auto-incremented using build counter/run number
       - Local builds use the values below
-      - Update versionMajor/versionMinor in azure-pipelines.yml for releases
+      - To increment version, update VersionMajor/VersionMinor here and sync AssemblyInfo.cs
     -->
     <VersionMajor>1</VersionMajor>
     <VersionMinor>1</VersionMinor>

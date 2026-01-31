@@ -134,7 +134,21 @@ jobs:
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1.2
     
+    - name: Check for test assemblies
+      id: check_tests
+      shell: pwsh
+      run: |
+        $testDlls = Get-ChildItem -Path "${{ github.workspace }}" -Recurse -Filter "*test*.dll" -ErrorAction SilentlyContinue
+        if ($testDlls.Count -gt 0) {
+          echo "HAS_TESTS=true" >> $env:GITHUB_OUTPUT
+          Write-Host "Found $($testDlls.Count) test assemblies"
+        } else {
+          echo "HAS_TESTS=false" >> $env:GITHUB_OUTPUT
+          Write-Host "No test assemblies found - skipping tests"
+        }
+    
     - name: Run Tests
+      if: steps.check_tests.outputs.HAS_TESTS == 'true'
       continue-on-error: true
       run: vstest.console.exe **\*test*.dll /Platform:"${{ env.BUILD_PLATFORM }}" /InIsolation
     
