@@ -17,8 +17,8 @@ on:
       - 'docs/**'
 
 env:
-BUILD_PLATFORM: 'Any CPU'
-BUILD_CONFIGURATION: 'Release'
+  BUILD_PLATFORM: 'Any CPU'
+  BUILD_CONFIGURATION: 'Release'
 
 jobs:
   build:
