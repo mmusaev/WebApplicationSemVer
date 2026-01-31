@@ -8,16 +8,17 @@ trigger:
     - README.md
     - docs/*
 
+
 pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+buildPlatform: 'Any CPU'
+buildConfiguration: 'Release'
   # Semantic version base - update these for major/minor releases
   versionMajor: 1
   versionMinor: 0
+
   # Patch version is auto-incremented from build counter
   versionPatch: $[counter(format('{0}.{1}', variables['versionMajor'], variables['versionMinor']), 0)]
   # Full semantic version
@@ -39,9 +40,14 @@ stages:
       displayName: 'Install NuGet'
       
     - task: NuGetCommand@2
-      displayName: 'Restore NuGet Packages'
+      displayName: 'Restore NuGet Packages for WebApplicationSemVer'
       inputs:
-        restoreSolution: '$(solution)'
+        restoreSolution: 'WebApplicationSemVer/WebApplicationSemVer.csproj'
+        
+    - task: NuGetCommand@2
+      displayName: 'Restore NuGet Packages for Database'
+      inputs:
+        restoreSolution: 'Database/Database.csproj'
         
     - task: PowerShell@2
       displayName: 'Update Version in Directory.Build.props'
@@ -88,9 +94,9 @@ stages:
           Get-Content $filePath | Select-String -Pattern "AssemblyVersion"
           
     - task: VSBuild@1
-      displayName: 'Build Solution'
+      displayName: 'Build WebApplicationSemVer'
       inputs:
-        solution: '$(solution)'
+        solution: 'WebApplicationSemVer/WebApplicationSemVer.csproj'
         msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(semVer) /p:AssemblyVersion=$(versionMajor).$(versionMinor).0.0 /p:FileVersion=$(semVer).0 /p:InformationalVersion=$(semVer)'
         platform: '$(buildPlatform)'
         configuration: '$(buildConfiguration)'
