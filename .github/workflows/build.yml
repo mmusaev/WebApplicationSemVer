@@ -1,0 +1,141 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+
+env:
+  BUILD_PLATFORM: 'Any CPU'
+  BUILD_CONFIGURATION: 'Release'
+  VERSION_MAJOR: 1
+  VERSION_MINOR: 0
+
+jobs:
+  build:
+    name: Build Solution
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+      with:
+        nuget-version: 'latest'
+    
+    - name: Calculate version
+      id: version
+      shell: pwsh
+      run: |
+        $versionPatch = $env:GITHUB_RUN_NUMBER
+        $semVer = "${{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.$versionPatch"
+        echo "PATCH=$versionPatch" >> $env:GITHUB_OUTPUT
+        echo "SEMVER=$semVer" >> $env:GITHUB_OUTPUT
+        echo "ASSEMBLY_VERSION=${{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.0.0" >> $env:GITHUB_OUTPUT
+        echo "FILE_VERSION=$semVer.0" >> $env:GITHUB_OUTPUT
+        Write-Host "Semantic Version: $semVer"
+    
+    - name: Restore NuGet packages for WebApplicationSemVer
+      run: nuget restore WebApplicationSemVer/WebApplicationSemVer.csproj -PackagesDirectory packages
+    
+    - name: Restore NuGet packages for Database
+      run: nuget restore Database/Database.csproj -PackagesDirectory packages
+    
+    - name: Update Version in Directory.Build.props
+      shell: pwsh
+      run: |
+        Write-Host "Updating Directory.Build.props to version ${{ steps.version.outputs.SEMVER }}"
+        
+        $filePath = "${{ github.workspace }}\Directory.Build.props"
+        $content = Get-Content $filePath -Raw
+        
+        # Update version components
+        $content = $content -replace '<VersionMajor>\d+</VersionMajor>', "<VersionMajor>${{ env.VERSION_MAJOR }}</VersionMajor>"
+        $content = $content -replace '<VersionMinor>\d+</VersionMinor>', "<VersionMinor>${{ env.VERSION_MINOR }}</VersionMinor>"
+        $content = $content -replace '<VersionPatch>\d+</VersionPatch>', "<VersionPatch>${{ steps.version.outputs.PATCH }}</VersionPatch>"
+        
+        $content | Set-Content $filePath -NoNewline
+        
+        Write-Host "Directory.Build.props updated successfully"
+        Get-Content $filePath | Select-String -Pattern "Version"
+    
+    - name: Update Version in AssemblyInfo.cs
+      shell: pwsh
+      run: |
+        Write-Host "Updating AssemblyInfo.cs to version ${{ steps.version.outputs.SEMVER }}"
+        
+        $assemblyVersion = "${{ steps.version.outputs.ASSEMBLY_VERSION }}"
+        $fileVersion = "${{ steps.version.outputs.FILE_VERSION }}"
+        $infoVersion = "${{ steps.version.outputs.SEMVER }}"
+        
+        $filePath = "${{ github.workspace }}\WebApplicationSemVer\Properties\AssemblyInfo.cs"
+        $content = Get-Content $filePath -Raw
+        
+        # Update version attributes
+        $content = $content -replace '\[assembly: AssemblyVersion\(".*?"\)\]', "[assembly: AssemblyVersion(""$assemblyVersion"")]"
+        $content = $content -replace '\[assembly: AssemblyFileVersion\(".*?"\)\]', "[assembly: AssemblyFileVersion(""$fileVersion"")]"
+        $content = $content -replace '\[assembly: AssemblyInformationalVersion\(".*?"\)\]', "[assembly: AssemblyInformationalVersion(""$infoVersion"")]"
+        
+        $content | Set-Content $filePath -NoNewline
+        
+        Write-Host "AssemblyInfo.cs updated successfully"
+        Get-Content $filePath | Select-String -Pattern "AssemblyVersion"
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Build WebApplicationSemVer
+      run: |
+        msbuild WebApplicationSemVer/WebApplicationSemVer.csproj `
+          /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+          /p:Platform="${{ env.BUILD_PLATFORM }}" `
+          /p:DeployOnBuild=true `
+          /p:WebPublishMethod=Package `
+          /p:PackageAsSingleFile=true `
+          /p:SkipInvalidConfigurations=true `
+          /p:PackageLocation="${{ github.workspace }}\artifacts" `
+          /p:Version=${{ steps.version.outputs.SEMVER }} `
+          /p:AssemblyVersion=${{ steps.version.outputs.ASSEMBLY_VERSION }} `
+          /p:FileVersion=${{ steps.version.outputs.FILE_VERSION }} `
+          /p:InformationalVersion=${{ steps.version.outputs.SEMVER }}
+    
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1.2
+    
+    - name: Run Tests
+      continue-on-error: true
+      run: vstest.console.exe **\*test*.dll /Platform:"${{ env.BUILD_PLATFORM }}" /InIsolation
+    
+    - name: Display Build Version Info
+      shell: pwsh
+      run: |
+        Write-Host "====================================="
+        Write-Host "Build Version Information"
+        Write-Host "====================================="
+        Write-Host "Semantic Version: ${{ steps.version.outputs.SEMVER }}"
+        Write-Host "Assembly Version: ${{ steps.version.outputs.ASSEMBLY_VERSION }}"
+        Write-Host "File Version: ${{ steps.version.outputs.FILE_VERSION }}"
+        Write-Host "Build Number: ${{ github.run_number }}"
+        Write-Host "====================================="
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: WebApplicationSemVer-${{ steps.version.outputs.SEMVER }}
+        path: ${{ github.workspace }}\artifacts\**\*
+        if-no-files-found: warn
