@@ -1,0 +1,125 @@
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    exclude:
+    - README.md
+    - docs/*
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  # Semantic version base - update these for major/minor releases
+  versionMajor: 1
+  versionMinor: 0
+  # Patch version is auto-incremented from build counter
+  versionPatch: $[counter(format('{0}.{1}', variables['versionMajor'], variables['versionMinor']), 0)]
+  # Full semantic version
+  semVer: $(versionMajor).$(versionMinor).$(versionPatch)
+  
+name: $(versionMajor).$(versionMinor).$(versionPatch)+$(Build.BuildId)
+
+stages:
+- stage: Build
+  displayName: 'Build and Test'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Solution'
+    steps:
+    - checkout: self
+      fetchDepth: 0
+      
+    - task: NuGetToolInstaller@1
+      displayName: 'Install NuGet'
+      
+    - task: NuGetCommand@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        restoreSolution: '$(solution)'
+        
+    - task: PowerShell@2
+      displayName: 'Update Version in Directory.Build.props'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Updating Directory.Build.props to version $(semVer)"
+          
+          $filePath = "$(Build.SourcesDirectory)\Directory.Build.props"
+          $content = Get-Content $filePath -Raw
+          
+          # Update version components
+          $content = $content -replace '<VersionMajor>\d+</VersionMajor>', "<VersionMajor>$(versionMajor)</VersionMajor>"
+          $content = $content -replace '<VersionMinor>\d+</VersionMinor>', "<VersionMinor>$(versionMinor)</VersionMinor>"
+          $content = $content -replace '<VersionPatch>\d+</VersionPatch>', "<VersionPatch>$(versionPatch)</VersionPatch>"
+          
+          $content | Set-Content $filePath -NoNewline
+          
+          Write-Host "Directory.Build.props updated successfully"
+          Get-Content $filePath | Select-String -Pattern "Version"
+          
+    - task: PowerShell@2
+      displayName: 'Update Version in AssemblyInfo.cs'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Updating AssemblyInfo.cs to version $(semVer)"
+          
+          $assemblyVersion = "$(versionMajor).$(versionMinor).0.0"
+          $fileVersion = "$(versionMajor).$(versionMinor).$(versionPatch).0"
+          $infoVersion = "$(semVer)"
+          
+          $filePath = "$(Build.SourcesDirectory)\WebApplicationSemVer\Properties\AssemblyInfo.cs"
+          $content = Get-Content $filePath -Raw
+          
+          # Update version attributes
+          $content = $content -replace '\[assembly: AssemblyVersion\(".*?"\)\]', "[assembly: AssemblyVersion(""$assemblyVersion"")]"
+          $content = $content -replace '\[assembly: AssemblyFileVersion\(".*?"\)\]', "[assembly: AssemblyFileVersion(""$fileVersion"")]"
+          $content = $content -replace '\[assembly: AssemblyInformationalVersion\(".*?"\)\]', "[assembly: AssemblyInformationalVersion(""$infoVersion"")]"
+          
+          $content | Set-Content $filePath -NoNewline
+          
+          Write-Host "AssemblyInfo.cs updated successfully"
+          Get-Content $filePath | Select-String -Pattern "AssemblyVersion"
+          
+    - task: VSBuild@1
+      displayName: 'Build Solution'
+      inputs:
+        solution: '$(solution)'
+        msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(semVer) /p:AssemblyVersion=$(versionMajor).$(versionMinor).0.0 /p:FileVersion=$(semVer).0 /p:InformationalVersion=$(semVer)'
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
+        
+    - task: VSTest@2
+      displayName: 'Run Tests'
+      inputs:
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
+      continueOnError: true
+      
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Web Application Artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'WebApplicationSemVer-$(semVer)'
+        publishLocation: 'Container'
+        
+    - task: PowerShell@2
+      displayName: 'Display Build Version Info'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "##vso[build.updatebuildnumber]$(semVer)"
+          Write-Host "====================================="
+          Write-Host "Build Version Information"
+          Write-Host "====================================="
+          Write-Host "Semantic Version: $(semVer)"
+          Write-Host "Assembly Version: $(versionMajor).$(versionMinor).0.0"
+          Write-Host "File Version: $(semVer).0"
+          Write-Host "Build Number: $(Build.BuildNumber)"
+          Write-Host "====================================="

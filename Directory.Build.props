@@ -7,13 +7,18 @@
       For traditional .NET Framework projects (WebApplicationSemVer): Manually sync AssemblyInfo.cs
       
       SemVer Rules:
-      - MAJOR: Breaking changes (1.0.0 ? 2.0.0)
-      - MINOR: New features, backwards compatible (1.0.0 ? 1.1.0)
-      - PATCH: Bug fixes (1.0.0 ? 1.0.1)
+      - MAJOR: Breaking changes (1.0.0 → 2.0.0)
+      - MINOR: New features, backwards compatible (1.0.0 → 1.1.0)
+      - PATCH: Bug fixes (1.0.0 → 1.0.1)
+      
+      CI/CD Note:
+      - In Azure DevOps, VersionPatch is auto-incremented using build counter
+      - Local builds use the values below
+      - Update versionMajor/versionMinor in azure-pipelines.yml for releases
     -->
     <VersionMajor>1</VersionMajor>
     <VersionMinor>0</VersionMinor>
-    <VersionPatch>1</VersionPatch>
+    <VersionPatch>0</VersionPatch>
     <VersionSuffix></VersionSuffix> <!-- Optional: beta, rc1, etc. -->
     
     <!-- Computed Version Properties -->
