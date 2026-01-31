@@ -13,17 +13,11 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
-  # Semantic version base - update these for major/minor releases
-  versionMajor: 1
-  versionMinor: 0
-  # Patch version is auto-incremented from build counter
-  versionPatch: $[counter(format('{0}.{1}', variables['versionMajor'], variables['versionMinor']), 0)]
-  # Full semantic version
-  semVer: $(versionMajor).$(versionMinor).$(versionPatch)
+buildPlatform: 'Any CPU'
+buildConfiguration: 'Release'
   
-name: $(versionMajor).$(versionMinor).$(versionPatch)+$(Build.BuildId)
+  
+name: $(Build.BuildId)
 
 stages:
 - stage: Build
@@ -34,6 +28,31 @@ stages:
     steps:
     - checkout: self
       fetchDepth: 0
+      
+    - task: PowerShell@2
+      displayName: 'Read Version from Directory.Build.props'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Reading version from Directory.Build.props"
+          
+          [xml]$buildProps = Get-Content "$(Build.SourcesDirectory)\Directory.Build.props"
+          $versionMajor = $buildProps.Project.PropertyGroup.VersionMajor
+          $versionMinor = $buildProps.Project.PropertyGroup.VersionMinor
+          
+          # Patch version auto-incremented from build counter
+          $versionPatch = $env:BUILD_BUILDNUMBER.Split('.')[-1]
+          $semVer = "$versionMajor.$versionMinor.$versionPatch"
+          
+          Write-Host "Version read from Directory.Build.props: $versionMajor.$versionMinor"
+          Write-Host "Patch version (from build counter): $versionPatch"
+          Write-Host "Semantic Version: $semVer"
+          
+          # Set pipeline variables
+          echo "##vso[task.setvariable variable=versionMajor]$versionMajor"
+          echo "##vso[task.setvariable variable=versionMinor]$versionMinor"
+          echo "##vso[task.setvariable variable=versionPatch]$versionPatch"
+          echo "##vso[task.setvariable variable=semVer]$semVer"
       
     - task: NuGetToolInstaller@1
       displayName: 'Install NuGet'

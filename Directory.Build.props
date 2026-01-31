@@ -17,8 +17,8 @@
       - Update versionMajor/versionMinor in azure-pipelines.yml for releases
     -->
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>0</VersionMinor>
-    <VersionPatch>1</VersionPatch>
+    <VersionMinor>1</VersionMinor>
+    <VersionPatch>0</VersionPatch>
     <VersionSuffix></VersionSuffix> <!-- Optional: beta, rc1, etc. -->
     
     <!-- Computed Version Properties -->

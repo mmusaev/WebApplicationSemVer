@@ -17,10 +17,8 @@ on:
       - 'docs/**'
 
 env:
-  BUILD_PLATFORM: 'Any CPU'
-  BUILD_CONFIGURATION: 'Release'
-  VERSION_MAJOR: 1
-  VERSION_MINOR: 0
+BUILD_PLATFORM: 'Any CPU'
+BUILD_CONFIGURATION: 'Release'
 
 jobs:
   build:
@@ -38,16 +36,35 @@ jobs:
       with:
         nuget-version: 'latest'
     
+    - name: Read Version from Directory.Build.props
+      id: read_version
+      shell: pwsh
+      run: |
+        Write-Host "Reading version from Directory.Build.props"
+        
+        [xml]$buildProps = Get-Content "${{ github.workspace }}\Directory.Build.props"
+        $versionMajor = $buildProps.Project.PropertyGroup.VersionMajor
+        $versionMinor = $buildProps.Project.PropertyGroup.VersionMinor
+        
+        Write-Host "Version read from Directory.Build.props: $versionMajor.$versionMinor"
+        
+        echo "MAJOR=$versionMajor" >> $env:GITHUB_OUTPUT
+        echo "MINOR=$versionMinor" >> $env:GITHUB_OUTPUT
+    
     - name: Calculate version
       id: version
       shell: pwsh
       run: |
+        $versionMajor = "${{ steps.read_version.outputs.MAJOR }}"
+        $versionMinor = "${{ steps.read_version.outputs.MINOR }}"
         $versionPatch = $env:GITHUB_RUN_NUMBER
-        $semVer = "${{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.$versionPatch"
+        $semVer = "$versionMajor.$versionMinor.$versionPatch"
+        
         echo "PATCH=$versionPatch" >> $env:GITHUB_OUTPUT
         echo "SEMVER=$semVer" >> $env:GITHUB_OUTPUT
-        echo "ASSEMBLY_VERSION=${{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.0.0" >> $env:GITHUB_OUTPUT
+        echo "ASSEMBLY_VERSION=$versionMajor.$versionMinor.0.0" >> $env:GITHUB_OUTPUT
         echo "FILE_VERSION=$semVer.0" >> $env:GITHUB_OUTPUT
+        
         Write-Host "Semantic Version: $semVer"
     
     - name: Restore NuGet packages for WebApplicationSemVer
@@ -65,8 +82,8 @@ jobs:
         $content = Get-Content $filePath -Raw
         
         # Update version components
-        $content = $content -replace '<VersionMajor>\d+</VersionMajor>', "<VersionMajor>${{ env.VERSION_MAJOR }}</VersionMajor>"
-        $content = $content -replace '<VersionMinor>\d+</VersionMinor>', "<VersionMinor>${{ env.VERSION_MINOR }}</VersionMinor>"
+        $content = $content -replace '<VersionMajor>\d+</VersionMajor>', "<VersionMajor>${{ steps.read_version.outputs.MAJOR }}</VersionMajor>"
+        $content = $content -replace '<VersionMinor>\d+</VersionMinor>', "<VersionMinor>${{ steps.read_version.outputs.MINOR }}</VersionMinor>"
         $content = $content -replace '<VersionPatch>\d+</VersionPatch>', "<VersionPatch>${{ steps.version.outputs.PATCH }}</VersionPatch>"
         
         $content | Set-Content $filePath -NoNewline
