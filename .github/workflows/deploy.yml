@@ -37,12 +37,34 @@ jobs:
         Write-Host "Downloaded deployment files:"
         Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Recurse | Select-Object FullName, Length
     
+    - name: Prepare deployment package
+      shell: pwsh
+      run: |
+        # The downloaded artifact creates a folder, we need to get the actual content
+        $artifactFolder = Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Directory | Select-Object -First 1
+        
+        if ($artifactFolder) {
+          Write-Host "Found artifact folder: $($artifactFolder.FullName)"
+          $deployPath = "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\deploy"
+          
+          # Copy contents to deploy folder
+          Copy-Item -Path "$($artifactFolder.FullName)\*" -Destination $deployPath -Recurse -Force
+          
+          Write-Host "Contents prepared for deployment:"
+          Get-ChildItem -Path $deployPath | Select-Object Name
+          
+          echo "DEPLOY_PATH=$deployPath" >> $env:GITHUB_ENV
+        } else {
+          # If no folder, use the package path directly
+          echo "DEPLOY_PATH=${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" >> $env:GITHUB_ENV
+        }
+    
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        package: ${{ env.DEPLOY_PATH }}
     
     - name: Display deployment info
       shell: pwsh
