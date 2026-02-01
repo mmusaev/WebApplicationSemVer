@@ -1,4 +1,4 @@
-name: Build WebApplicationSemVer and Version using Directory.Build.props
+name: CI WebApplicationSemVer using Directory.Build.props
 
 on:
   push:
