@@ -1,4 +1,4 @@
-name: CI SemVerusing Directory.Build.props
+name: CI SemVer using Directory.Build.props
 
 on:
   push:
