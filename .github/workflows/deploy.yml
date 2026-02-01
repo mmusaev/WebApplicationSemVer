@@ -30,35 +30,28 @@ jobs:
         merge-multiple: true
       if: github.event_name == 'workflow_run'
     
-    - name: List downloaded files
+    - name: Find deployment package
       shell: pwsh
+      id: find_package
       run: |
         Write-Host "Contents of package directory:"
         Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Recurse | Select-Object FullName
-    
-    - name: Extract deployment package
-      shell: pwsh
-      run: |
+        
         $zipFile = Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Filter "*.zip" -Recurse | Select-Object -First 1
         if ($zipFile) {
-          Write-Host "Found package: $($zipFile.FullName)"
-          $extractPath = "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\extracted"
-          Expand-Archive -Path $zipFile.FullName -DestinationPath $extractPath -Force
-          Write-Host "Extracted to: $extractPath"
-          
-          # List contents
-          Get-ChildItem -Path $extractPath -Recurse | Select-Object FullName
+          Write-Host "Found deployment package: $($zipFile.FullName)"
+          echo "PACKAGE_PATH=$($zipFile.FullName)" >> $env:GITHUB_OUTPUT
         } else {
-          Write-Host "No zip file found!"
+          Write-Host "##[error]No deployment package found!"
           exit 1
         }
     
     - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/extracted
+        package: ${{ steps.find_package.outputs.PACKAGE_PATH }}
     
     - name: Display deployment info
       shell: pwsh
