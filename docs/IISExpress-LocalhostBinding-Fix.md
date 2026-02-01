@@ -1,4 +1,4 @@
-# Fixing IIS Express Localhost Binding Issues
+﻿# Fixing IIS Express Localhost Binding Issues
 
 ## Problem
 When running an ASP.NET Framework web application in Visual Studio with IIS Express, you may encounter connection errors such as:
@@ -51,7 +51,7 @@ After removing, recreate the binding:
 The simplest solution is to run Visual Studio as Administrator, which automatically handles URL reservations.
 
 1. Close Visual Studio
-2. Right-click Visual Studio icon ? "Run as administrator"
+2. Right-click Visual Studio icon → "Run as administrator"
 3. Open your solution and press F5
 
 #### 2. Using netsh (Alternative Method)
@@ -74,7 +74,7 @@ After running the command:
 
 If you don't know your SSL port, check:
 
-1. Right-click your web project ? Properties
+1. Right-click your web project → Properties
 2. Go to the **Web** tab
 3. Look for "Project URL" under "Servers" section
 4. The port number appears in the URL (e.g., `https://localhost:44348/`)
@@ -86,7 +86,7 @@ If you don't know your SSL port, check:
 
 **Certificate trust warnings in browser:**
 - Self-signed certificates will show browser warnings
-- Click "Advanced" ? "Proceed to localhost" (development only!)
+- Click "Advanced" → "Proceed to localhost" (development only!)
 - Or install the IIS Express certificate in your Trusted Root store
 
 **Port already in use:**
