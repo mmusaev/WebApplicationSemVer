@@ -45,12 +45,7 @@ jobs:
         
         if ($artifactFolder) {
           Write-Host "Found artifact folder: $($artifactFolder.FullName)"
-          $deployPath = "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\deploy"
-          
-          # Create deploy directory if it doesn't exist
-          New-Item -ItemType Directory -Path $deployPath -Force | Out-Null
-          
-          # Copy contents to deploy folder
+          $deployPath = "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\deploy"`n          `n          # Create deploy directory if it doesn't exist`n          New-Item -ItemType Directory -Path $deployPath -Force | Out-Null`n          `n          # Copy contents to deploy folder
           Copy-Item -Path "$($artifactFolder.FullName)\*" -Destination $deployPath -Recurse -Force
           
           Write-Host "Contents prepared for deployment:"
