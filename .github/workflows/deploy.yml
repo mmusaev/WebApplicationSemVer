@@ -4,9 +4,9 @@ on:
   workflow_run:
     workflows: ["CI SemVer using Directory.Build.props"]
     types:
-    - completed
+      - completed
     branches:
-    - main
+      - main
   workflow_dispatch:
 
 env:
