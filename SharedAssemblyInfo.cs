@@ -18,6 +18,6 @@ using System.Runtime.InteropServices;
 // Version information - NOTE: Also defined in Directory.Build.props
 // For local development: Manually sync these with Directory.Build.props when bumping version
 // For CI/CD builds: azure-pipelines.yml automatically updates these values
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0.0")]
-[assembly: AssemblyInformationalVersion("1.1.0")]
+[assembly: AssemblyVersion("2.0.0.0")]
+[assembly: AssemblyFileVersion("2.0.0.0")]
+[assembly: AssemblyInformationalVersion("2.0.0")]
