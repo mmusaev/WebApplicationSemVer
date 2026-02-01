@@ -17,8 +17,8 @@
       - Local builds use the values below
       - To increment version, update VersionMajor/VersionMinor here and sync AssemblyInfo.cs
     -->
-    <VersionMajor>1</VersionMajor>
-    <VersionMinor>1</VersionMinor>
+    <VersionMajor>2</VersionMajor>
+    <VersionMinor>0</VersionMinor>
     <VersionPatch>0</VersionPatch>
     <VersionSuffix></VersionSuffix> <!-- Optional: beta, rc1, etc. -->
     
