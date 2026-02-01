@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build WebApplicationSemVer and Version using Directory.Build.props
 
 on:
   push:
