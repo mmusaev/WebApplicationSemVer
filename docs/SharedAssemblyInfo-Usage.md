@@ -17,7 +17,9 @@ Single source of truth for version numbers and common assembly attributes shared
 C:\dev\WebApplicationSemVer\SharedAssemblyInfo.cs
 ```
 
-## What It Contains
+## What SharedAssemblyInfo.cs Contains
+
+**Non-version attributes only** (shared across all projects):
 
 ```csharp
 [assembly: AssemblyCompany("")]
@@ -25,24 +27,50 @@ C:\dev\WebApplicationSemVer\SharedAssemblyInfo.cs
 [assembly: AssemblyCopyright("Copyright © 2026")]
 [assembly: ComVisible(false)]
 
-// Synchronized with Directory.Build.props
-[assembly: AssemblyVersion("2.0.0.0")]
-[assembly: AssemblyFileVersion("2.0.0.0")]
-[assembly: AssemblyInformationalVersion("2.0.0")]
+// Version attributes are NO LONGER here!
+// They are auto-generated from Directory.Build.props via MSBuild target
 ```
 
-## Projects Using SharedAssemblyInfo.cs
+## How Versioning Works
 
-| Project | Type | Purpose |
-|---------|------|---------|
-| **WebApplicationSemVer** | ASP.NET MVC 4.8.1 | Main web application |
-| **Database2** | Class Library 4.8.1 | Order management |
+### 1. Directory.Build.props (Single Source of Truth)
+All version info is defined here:
 
-*Note: Database project uses SDK-style format and gets version from Directory.Build.props*
+```xml
+<VersionMajor>2</VersionMajor>
+<VersionMinor>0</VersionMinor>
+<VersionPatch>0</VersionPatch>
 
-## How To Link SharedAssemblyInfo.cs to a Project
+<!-- Computed automatically -->
+<AssemblyVersion>2.0.0.0</AssemblyVersion>
+<FileVersion>2.0.0.0</FileVersion>
+<InformationalVersion>2.0.0</InformationalVersion>
+```
 
-### Step 1: Edit Project File (.csproj)
+### 2. SDK-Style Projects (.NET Standard/Core)
+- Automatically use version from `Directory.Build.props`
+- No additional setup required ✅
+
+### 3. Classic .NET Framework Projects
+- Use MSBuild target to **auto-generate** `VersionInfo.cs` at build time
+- Version values come from `Directory.Build.props`
+- See "How To Set Up Auto-Versioning" section below for setup
+
+## Projects and Versioning Strategy
+
+| Project | Type | Versioning Method |
+|---------|------|-------------------|
+| **WebApplicationSemVer** | ASP.NET MVC 4.8.1 | MSBuild auto-generates `VersionInfo.cs` |
+| **Database2** | Class Library 4.8.1 | MSBuild auto-generates `VersionInfo.cs` |
+| **Database** | .NET Standard 2.0 (SDK-style) | Automatic from `Directory.Build.props` |
+
+**All projects reference `SharedAssemblyInfo.cs` for non-version attributes (Company, Product, Copyright).**
+
+## How To Set Up Auto-Versioning for Classic .NET Framework Projects
+
+For classic .NET Framework projects (non-SDK style), you need to add an MSBuild target to auto-generate version attributes from `Directory.Build.props`.
+
+### Step 1: Link SharedAssemblyInfo.cs
 
 Add this to your `.csproj` file:
 
@@ -55,65 +83,142 @@ Add this to your `.csproj` file:
 </ItemGroup>
 ```
 
-### Step 2: Keep Project-Specific Attributes Only
+### Step 2: Add MSBuild Target for Auto-Generated Versions
 
-In `Properties\AssemblyInfo.cs`, keep only project-specific attributes:
+**⚠️ CRITICAL:** Add this MSBuild target to **EACH** classic .NET Framework `.csproj` file **BEFORE** the `<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />` line:
+
+**Example projects that need this:**
+- `WebApplicationSemVer\WebApplicationSemVer.csproj`
+- `Database2\Database2.csproj`
+- Any other classic .NET Framework project in your solution
+
+```xml
+<!-- Generate VersionInfo.cs with version attributes from MSBuild properties -->
+<Target Name="GenerateVersionInfo" BeforeTargets="BeforeBuild">
+  <WriteLinesToFile
+    File="$(IntermediateOutputPath)VersionInfo.cs"
+    Lines='[assembly: System.Reflection.AssemblyVersion("$(AssemblyVersion)")]&#xD;&#xA;[assembly: System.Reflection.AssemblyFileVersion("$(FileVersion)")]&#xD;&#xA;[assembly: System.Reflection.AssemblyInformationalVersion("$(InformationalVersion)")]'
+    Overwrite="true" />
+  <ItemGroup>
+    <Compile Include="$(IntermediateOutputPath)VersionInfo.cs" />
+  </ItemGroup>
+</Target>
+```
+
+**What this does:**
+- Before each build, MSBuild generates a `VersionInfo.cs` file with version attributes
+- The version values come from `Directory.Build.props` ($(AssemblyVersion), $(FileVersion), $(InformationalVersion))
+- The file is placed in the `obj\` folder and automatically compiled
+- **Result:** Your classic project gets the same version as SDK-style projects automatically!
+
+### Step 3: Remove Version Attributes from SharedAssemblyInfo.cs
+
+In `SharedAssemblyInfo.cs`, **REMOVE** these lines (if present):
+
+```csharp
+// ❌ DELETE THESE - they are now auto-generated:
+[assembly: AssemblyVersion("...")]
+[assembly: AssemblyFileVersion("...")]
+[assembly: AssemblyInformationalVersion("...")]
+```
+
+Keep only:
+```csharp
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("WebApplicationSemVer")]
+[assembly: AssemblyCopyright("Copyright © 2026")]
+[assembly: ComVisible(false)]
+```
+
+### Step 4: Keep Project-Specific Attributes Only
+
+In `Properties\AssemblyInfo.cs`, keep **ONLY** project-specific attributes:
 
 ```csharp
 [assembly: AssemblyTitle("YourProjectName")]
 [assembly: AssemblyDescription("Project description")]
 [assembly: AssemblyConfiguration("")]
-[assembly: Guid("your-guid-here")] // If needed
+[assembly: Guid("your-guid-here")] // For COM interop
 ```
 
-**Note:** Do not duplicate attributes from SharedAssemblyInfo.cs (Company, Product, Copyright, Version, etc.)
+**⚠️ DO NOT include:** AssemblyCompany, AssemblyProduct, AssemblyCopyright, ComVisible, or **any version attributes**
 
-### Step 3: Rebuild
+### Step 5: Rebuild
 
 ```bash
 dotnet clean
 dotnet build
 ```
 
+**Verify:** Check your DLL properties - the File Version should match the version in `Directory.Build.props`!
+
 ## How To Update Version
 
-Update **both files together**:
+**Update only ONE file:** `Directory.Build.props`
 
-### 1. Update Directory.Build.props
+### Local Development
+
+Edit `Directory.Build.props`:
+
 ```xml
 <VersionMajor>2</VersionMajor>
 <VersionMinor>1</VersionMinor>
 <VersionPatch>0</VersionPatch>
 ```
 
-### 2. Update SharedAssemblyInfo.cs
-```csharp
-[assembly: AssemblyVersion("2.1.0.0")]
-[assembly: AssemblyFileVersion("2.1.0.0")]
-[assembly: AssemblyInformationalVersion("2.1.0")]
-```
-
-### 3. Commit Both Files
+Commit:
 ```bash
-git add Directory.Build.props SharedAssemblyInfo.cs
+git add Directory.Build.props
 git commit -m "chore: Bump version to 2.1.0"
 ```
+
+**That's it!** All projects will automatically use the new version on next build.
+
+### CI/CD Pipeline (Azure DevOps / GitHub Actions)
+
+The pipeline can auto-increment `VersionPatch` or set a build number:
+
+**Example (Azure Pipelines):**
+```yaml
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      $buildNumber = "$(Build.BuildId)"
+      (Get-Content Directory.Build.props) -replace '<VersionPatch>0</VersionPatch>', "<VersionPatch>$buildNumber</VersionPatch>" | Set-Content Directory.Build.props
+```
+
+**Result:**
+- Local builds: `2.1.0.0`
+- CI/CD build #47: `2.1.47.0`
+- All DLLs get the same version automatically!
 
 ## Troubleshooting
 
 ### Error: Duplicate 'AssemblyVersion' attribute
 
-**Cause:** Version attribute exists in both SharedAssemblyInfo.cs and project's AssemblyInfo.cs
+**Cause:** Version attribute exists in `SharedAssemblyInfo.cs` or `Properties\AssemblyInfo.cs` AND auto-generated `VersionInfo.cs`
 
-**Fix:** Remove version attributes from `Properties\AssemblyInfo.cs`
+**Fix:** 
+1. Remove **all** version attributes from `SharedAssemblyInfo.cs`
+2. Remove **all** version attributes from `Properties\AssemblyInfo.cs`:
+   - `[assembly: AssemblyVersion(...)]`
+   - `[assembly: AssemblyFileVersion(...)]`
+   - `[assembly: AssemblyInformationalVersion(...)]`
 
-### Projects Show Different Versions
+### Where is the auto-generated VersionInfo.cs file?
 
-**Fix:**
-1. Clean solution: `dotnet clean`
-2. Delete `bin` and `obj` folders
-3. Verify SharedAssemblyInfo.cs is linked in `.csproj`
-4. Rebuild: `dotnet build`
+**Location:** `obj\Debug\VersionInfo.cs` or `obj\Release\VersionInfo.cs`
+
+This file is generated at build time and automatically included in compilation. You won't see it in Solution Explorer.
+
+**To verify it was generated:**
+```bash
+# After building, check if the file exists:
+dir obj\Debug\VersionInfo.cs
+# or
+dir obj\Release\VersionInfo.cs
+```
 
 ## Version History
 
