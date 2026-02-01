@@ -1,0 +1,72 @@
+name: Deploy to Azure App Service
+
+on:
+  workflow_run:
+    workflows: ["Build and Test"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: WebApplicationSemVer
+  AZURE_WEBAPP_PACKAGE_PATH: './package'
+
+jobs:
+  deploy:
+    name: Deploy to Azure
+    runs-on: windows-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+    - name: Download artifact from build workflow
+      uses: actions/download-artifact@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+        pattern: WebApplicationSemVer-*
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        merge-multiple: true
+      if: github.event_name == 'workflow_run'
+    
+    - name: List downloaded files
+      shell: pwsh
+      run: |
+        Write-Host "Contents of package directory:"
+        Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Recurse | Select-Object FullName
+    
+    - name: Extract deployment package
+      shell: pwsh
+      run: |
+        $zipFile = Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Filter "*.zip" -Recurse | Select-Object -First 1
+        if ($zipFile) {
+          Write-Host "Found package: $($zipFile.FullName)"
+          $extractPath = "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\extracted"
+          Expand-Archive -Path $zipFile.FullName -DestinationPath $extractPath -Force
+          Write-Host "Extracted to: $extractPath"
+          
+          # List contents
+          Get-ChildItem -Path $extractPath -Recurse | Select-Object FullName
+        } else {
+          Write-Host "No zip file found!"
+          exit 1
+        }
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/extracted
+    
+    - name: Display deployment info
+      shell: pwsh
+      run: |
+        Write-Host "====================================="
+        Write-Host "Deployment Information"
+        Write-Host "====================================="
+        Write-Host "App Service: ${{ env.AZURE_WEBAPP_NAME }}"
+        Write-Host "URL: https://webapplicationsemver-ejhadbguabfvb2ds.centralus-01.azurewebsites.net"
+        Write-Host "Deployment completed at: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+        Write-Host "====================================="
