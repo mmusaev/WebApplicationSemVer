@@ -30,62 +30,18 @@ jobs:
         merge-multiple: true
       if: github.event_name == 'workflow_run'
     
-    - name: Find and prepare deployment package
+    - name: List downloaded files
       shell: pwsh
-      id: prepare_package
       run: |
-        Write-Host "Contents of package directory:"
-        Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Recurse | Select-Object FullName
-        
-        $zipFile = Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Filter "*.zip" -Recurse | Select-Object -First 1
-        if ($zipFile) {
-          Write-Host "Found deployment package: $($zipFile.FullName)"
-          
-          # Extract to get the Content folder
-          $extractPath = "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\temp"
-          Expand-Archive -Path $zipFile.FullName -DestinationPath $extractPath -Force
-          
-          Write-Host "Extracted package contents:"
-          Get-ChildItem -Path $extractPath -Recurse | Select-Object FullName
-          
-          # The actual web content is in the Content folder
-          $contentPath = Join-Path $extractPath "Content\D_C\a\WebApplicationSemVer\WebApplicationSemVer\WebApplicationSemVer\obj\Any CPU\Release\Package\PackageTmp"
-          
-          # If that specific path doesn't exist, look for PackageTmp folder
-          if (-not (Test-Path $contentPath)) {
-            $packageTmp = Get-ChildItem -Path $extractPath -Filter "PackageTmp" -Recurse -Directory | Select-Object -First 1
-            if ($packageTmp) {
-              $contentPath = $packageTmp.FullName
-              Write-Host "Found PackageTmp at: $contentPath"
-            } else {
-              Write-Host "Looking for web.config to find deployment root..."
-              $webConfig = Get-ChildItem -Path $extractPath -Filter "web.config" -Recurse -File | Select-Object -First 1
-              if ($webConfig) {
-                $contentPath = $webConfig.Directory.FullName
-                Write-Host "Found web content at: $contentPath"
-              } else {
-                Write-Host "##[error]Could not find web content in package!"
-                exit 1
-              }
-            }
-          }
-          
-          Write-Host "Deployment content path: $contentPath"
-          Write-Host "Content to deploy:"
-          Get-ChildItem -Path $contentPath | Select-Object Name
-          
-          echo "CONTENT_PATH=$contentPath" >> $env:GITHUB_OUTPUT
-        } else {
-          Write-Host "##[error]No deployment package found!"
-          exit 1
-        }
+        Write-Host "Downloaded deployment files:"
+        Get-ChildItem -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}" -Recurse | Select-Object FullName, Length
     
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ steps.prepare_package.outputs.CONTENT_PATH }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
     
     - name: Display deployment info
       shell: pwsh

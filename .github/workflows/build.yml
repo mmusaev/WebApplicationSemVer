@@ -116,20 +116,30 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     
-    - name: Build WebApplicationSemVer
+    - name: Build and Publish WebApplicationSemVer
       run: |
         msbuild WebApplicationSemVer/WebApplicationSemVer.csproj `
+          /t:Build `
           /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
           /p:Platform="${{ env.BUILD_PLATFORM }}" `
-          /p:DeployOnBuild=true `
-          /p:WebPublishMethod=Package `
-          /p:PackageAsSingleFile=true `
-          /p:SkipInvalidConfigurations=true `
-          /p:PackageLocation="${{ github.workspace }}\artifacts" `
           /p:Version=${{ steps.version.outputs.SEMVER }} `
           /p:AssemblyVersion=${{ steps.version.outputs.ASSEMBLY_VERSION }} `
           /p:FileVersion=${{ steps.version.outputs.FILE_VERSION }} `
           /p:InformationalVersion=${{ steps.version.outputs.SEMVER }}
+        
+        msbuild WebApplicationSemVer/WebApplicationSemVer.csproj `
+          /t:WebPublish `
+          /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+          /p:Platform="${{ env.BUILD_PLATFORM }}" `
+          /p:WebPublishMethod=FileSystem `
+          /p:PublishUrl="${{ github.workspace }}\publish" `
+          /p:DeleteExistingFiles=True
+    
+    - name: Verify publish output
+      shell: pwsh
+      run: |
+        Write-Host "Published files:"
+        Get-ChildItem -Path "${{ github.workspace }}\publish" -Recurse | Select-Object FullName
     
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1.2
@@ -168,5 +178,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: WebApplicationSemVer-${{ steps.version.outputs.SEMVER }}
-        path: ${{ github.workspace }}\artifacts\**\*
-        if-no-files-found: warn
+        path: ${{ github.workspace }}\publish\**
+        if-no-files-found: error
