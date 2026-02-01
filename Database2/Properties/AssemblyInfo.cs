@@ -1,12 +1,12 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-// Project-specific assembly information for WebApplicationSemVer
+// Project-specific assembly information for Database2
 // Common attributes are defined in SharedAssemblyInfo.cs at the solution root
 
-[assembly: AssemblyTitle("WebApplicationSemVer")]
-[assembly: AssemblyDescription("ASP.NET MVC Web Application with Semantic Versioning")]
+[assembly: AssemblyTitle("Database2")]
+[assembly: AssemblyDescription("Database library for product data management")]
 [assembly: AssemblyConfiguration("")]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("25e34dfe-4aea-4de1-bbf7-77f206245b26")]
+[assembly: Guid("b8f6cd3e-84ce-45cd-a416-8ba60022298e")]
