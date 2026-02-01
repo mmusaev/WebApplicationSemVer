@@ -1,13 +1,13 @@
 name: CD to Azure App Service
 
 on:
-  workflow_run:
-    workflows: ["Build and Test"]
-    types:
-      - completed
-    branches:
-      - main
-  workflow_dispatch:
+workflow_run:
+  workflows: ["CI SemVer using Directory.Build.props"]
+  types:
+    - completed
+  branches:
+    - main
+workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: WebApplicationSemVer
@@ -21,13 +21,14 @@ jobs:
     
     steps:
     - name: Download artifact from build workflow
-      uses: actions/download-artifact@v4
+      uses: dawidd6/action-download-artifact@v3
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        run-id: ${{ github.event.workflow_run.id }}
-        pattern: WebApplicationSemVer-*
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        workflow: build.yml
+        workflow_conclusion: success
+        name: WebApplicationSemVer-*
+        name_is_regexp: true
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        merge-multiple: true
       if: github.event_name == 'workflow_run'
     
     - name: List downloaded files
