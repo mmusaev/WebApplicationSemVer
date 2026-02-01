@@ -15,10 +15,7 @@ using System.Runtime.InteropServices;
 // COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible(false)]
 
-// Version information - NOTE: Also defined in Directory.Build.props
-// For local development: Manually sync these with Directory.Build.props when bumping version
-// For CI/CD builds: azure-pipelines.yml automatically updates these values
-
-[assembly: AssemblyVersion("2.0.0.0")]
-[assembly: AssemblyFileVersion("2.0.0.0")]
-[assembly: AssemblyInformationalVersion("2.0.0")]
+// Version information is now auto-generated from Directory.Build.props
+// Classic .NET Framework projects use MSBuild target to generate VersionInfo.cs
+// SDK-style projects automatically use Directory.Build.props
+// This ensures all DLLs have consistent versions including build numbers

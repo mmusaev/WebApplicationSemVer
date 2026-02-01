@@ -48,5 +48,15 @@
     <Compile Include="Product.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <!-- Generate VersionInfo.cs with version attributes from MSBuild properties -->
+  <Target Name="GenerateVersionInfo" BeforeTargets="BeforeBuild">
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)VersionInfo.cs"
+      Lines='[assembly: System.Reflection.AssemblyVersion("$(AssemblyVersion)")]&#xD;&#xA;[assembly: System.Reflection.AssemblyFileVersion("$(FileVersion)")]&#xD;&#xA;[assembly: System.Reflection.AssemblyInformationalVersion("$(InformationalVersion)")]'
+      Overwrite="true" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)VersionInfo.cs" />
+    </ItemGroup>
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

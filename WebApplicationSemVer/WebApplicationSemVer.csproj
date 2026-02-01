@@ -242,6 +242,16 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
+  <!-- Generate VersionInfo.cs with version attributes from MSBuild properties -->
+  <Target Name="GenerateVersionInfo" BeforeTargets="BeforeBuild">
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)VersionInfo.cs"
+      Lines='[assembly: System.Reflection.AssemblyVersion("$(AssemblyVersion)")]&#xD;&#xA;[assembly: System.Reflection.AssemblyFileVersion("$(FileVersion)")]&#xD;&#xA;[assembly: System.Reflection.AssemblyInformationalVersion("$(InformationalVersion)")]'
+      Overwrite="true" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)VersionInfo.cs" />
+    </ItemGroup>
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
