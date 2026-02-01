@@ -121,7 +121,7 @@ jobs:
         msbuild WebApplicationSemVer/WebApplicationSemVer.csproj `
           /t:Build `
           /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
-          /p:Platform="${{ env.BUILD_PLATFORM }}" `
+          /p:Platform=AnyCPU `
           /p:Version=${{ steps.version.outputs.SEMVER }} `
           /p:AssemblyVersion=${{ steps.version.outputs.ASSEMBLY_VERSION }} `
           /p:FileVersion=${{ steps.version.outputs.FILE_VERSION }} `
@@ -130,7 +130,7 @@ jobs:
         msbuild WebApplicationSemVer/WebApplicationSemVer.csproj `
           /t:WebPublish `
           /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
-          /p:Platform="${{ env.BUILD_PLATFORM }}" `
+          /p:Platform=AnyCPU `
           /p:WebPublishMethod=FileSystem `
           /p:PublishUrl="${{ github.workspace }}\publish" `
           /p:DeleteExistingFiles=True
