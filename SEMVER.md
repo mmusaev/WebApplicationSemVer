@@ -92,7 +92,7 @@ All version information is centralized in `Directory.Build.props`:
 
 1. **Update version in `Directory.Build.props`:**
    ```bash
-   # For a new minor version (e.g., 2.0 ? 2.1)
+   # For a new minor version (e.g., 2.0 -> 2.1)
    git checkout main
    # Edit Directory.Build.props: Change VersionMinor to 1
    git add Directory.Build.props
