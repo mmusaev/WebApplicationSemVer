@@ -29,13 +29,13 @@ All versions are created and incremented by GitHub Actions and Azure DevOps (ADO
 ### Version Incrementing Rules
 
 1. **MAJOR** version when you make incompatible API changes
-   - Example: `1.0.0` ? `2.0.0`
+   - Example: `1.0.0` -> `2.0.0`
    
 2. **MINOR** version when you add functionality in a backwards compatible manner
-   - Example: `1.0.0` ? `1.1.0`
+   - Example: `1.0.0` -> `1.1.0`
 
 3. **PATCH** version when you make backwards compatible bug fixes
-   - Example: `1.0.0` ? `1.0.1`
+   - Example: `1.0.0` -> `1.0.1`
 
 ## Directory.Build.props - Single Source of Truth
 
@@ -92,7 +92,7 @@ All version information is centralized in `Directory.Build.props`:
 
 1. **Update version in `Directory.Build.props`:**
    ```bash
-   # For a new minor version (e.g., 2.0 ? 2.1)
+   # For a new minor version (e.g., 2.0 -> 2.1)
    git checkout main
    # Edit Directory.Build.props: Change VersionMinor to 1
    git add Directory.Build.props
@@ -113,7 +113,7 @@ All version information is centralized in `Directory.Build.props`:
 
 ## Best Practices
 
-### DO ?
+### DO
 
 - **Update only `Directory.Build.props`** when changing MAJOR or MINOR versions
 - **Let CI/CD auto-increment PATCH** using build counters
@@ -121,7 +121,7 @@ All version information is centralized in `Directory.Build.props`:
 - **Use FileVersion for diagnostics** - it captures the exact build number
 - **Tag releases from `main` branch** for production builds
 
-### DON'T ?
+### DON'T
 
 - **Don't manually edit `AssemblyInfo.cs`** - versions are auto-generated
 - **Don't manually edit `SharedAssemblyInfo.cs`** for version attributes
@@ -130,21 +130,21 @@ All version information is centralized in `Directory.Build.props`:
 
 ## Troubleshooting
 
-### Different versions in DLLs?
+### Different versions in DLLs
 
 **Solution:**
 1. Verify `Directory.Build.props` exists at solution root
 2. For classic projects: Verify `GenerateVersionInfo` MSBuild target exists in `.csproj`
 3. Clean and rebuild: `dotnet clean && dotnet build`
 
-### CI/CD not creating tags?
+### CI/CD not creating tags
 
 **Solution:**
 1. Ensure workflow has permissions to create tags
 2. Check that build is running on `main` or `release/*` branch
 3. Verify `Directory.Build.props` is being updated correctly in the pipeline
 
-### Version shows 0.0.0.0?
+### Version shows 0.0.0.0
 
 **Solution:**
 1. Classic projects: Add the `GenerateVersionInfo` MSBuild target to `.csproj`
