@@ -1,22 +1,23 @@
 <Project>
-  <PropertyGroup>
-    <!-- 
-      Semantic Versioning - Update these values to change version for all projects
+<PropertyGroup>
+  <!-- 
+    Semantic Versioning - Update these values to change version for all projects
       
-      For SDK-style projects (Database): Version is applied automatically
-      For traditional .NET Framework projects (WebApplicationSemVer): Manually sync AssemblyInfo.cs
+    For SDK-style projects (Database): Version is applied automatically
+    For traditional .NET Framework projects (WebApplicationSemVer, Database2):
+      Version is auto-generated via MSBuild target (GenerateVersionInfo) - no manual sync needed.
       
-      SemVer Rules:
-      - MAJOR: Breaking changes (1.0.0 → 2.0.0)
-      - MINOR: New features, backwards compatible (1.0.0 → 1.1.0)
-      - PATCH: Bug fixes (1.0.0 → 1.0.1)
+    SemVer Rules:
+    - MAJOR: Breaking changes (1.0.0 → 2.0.0)
+    - MINOR: New features, backwards compatible (1.0.0 → 1.1.0)
+    - PATCH: Bug fixes (1.0.0 → 1.0.1)
       
-      CI/CD Note:
-      - Pipelines automatically read VersionMajor/VersionMinor from this file
-      - VersionPatch is auto-incremented using build counter/run number
-      - Local builds use the values below
-      - To increment version, update VersionMajor/VersionMinor here and sync AssemblyInfo.cs
-    -->
+    CI/CD Note:
+    - Pipelines automatically read VersionMajor/VersionMinor from this file
+    - VersionPatch is auto-incremented using build counter/run number
+    - Local builds use the values below
+    - To increment version, update VersionMajor/VersionMinor here (no other files need editing)
+  -->
     <VersionMajor>2</VersionMajor>
     <VersionMinor>0</VersionMinor>
     <VersionPatch>0</VersionPatch>
@@ -27,7 +28,13 @@
     <Version Condition="'$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
     <Version Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
     
-    <!-- Assembly Versions -->
+    <!-- Assembly Versions
+         AssemblyVersion: MAJOR.MINOR.0.0 - Kept stable to avoid binding redirects in .NET Framework;
+                          only changes for breaking changes (MAJOR) or new features (MINOR).
+                          This is a .NET best practice for library compatibility.
+         FileVersion: MAJOR.MINOR.PATCH.0 - Captures exact build numbers for diagnostics/troubleshooting.
+         InformationalVersion: Full semantic version string (may include suffix like -beta).
+    -->
     <AssemblyVersion>$(VersionMajor).$(VersionMinor).0.0</AssemblyVersion>
     <FileVersion>$(VersionPrefix).0</FileVersion>
     <InformationalVersion>$(Version)</InformationalVersion>
