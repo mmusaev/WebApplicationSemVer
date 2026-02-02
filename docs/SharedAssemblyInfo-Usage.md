@@ -47,6 +47,29 @@ All version info is defined here:
 <InformationalVersion>2.0.0</InformationalVersion>
 ```
 
+#### Understanding the Version Properties
+
+| Property | Format | Purpose |
+|----------|--------|---------|
+| **AssemblyVersion** | `MAJOR.MINOR.0.0` | .NET runtime binding identity. Kept stable to avoid binding redirects. |
+| **FileVersion** | `MAJOR.MINOR.PATCH.0` | Exact build number for diagnostics. Shown in file properties. |
+| **InformationalVersion** | `MAJOR.MINOR.PATCH[-suffix]` | Full semantic version. May include prerelease suffix (e.g., `-beta`). |
+
+#### Why AssemblyVersion is `2.0.0.0` (not `2.0.33.0`)
+
+**This is intentional and a .NET best practice:**
+
+- **Avoids binding redirects** - Assemblies with the same `AssemblyVersion` are considered compatible by the .NET runtime. Changing it for every build would require `app.config` binding redirects.
+- **Enables side-by-side compatibility** - Different patch builds can load without conflicts.
+- **Semantic meaning** - Only changes when the API contract changes (MAJOR = breaking change, MINOR = new feature).
+- **FileVersion captures the details** - Use `FileVersion` (e.g., `2.0.33.0`) to identify the exact build for troubleshooting.
+
+**Example CI build #33:**
+- `AssemblyVersion`: `2.0.0.0` (stable)
+- `FileVersion`: `2.0.33.0` (exact build)
+- `InformationalVersion`: `2.0.33` (semantic version)
+
+
 ### 2. SDK-Style Projects (.NET Standard/Core)
 - Automatically use version from `Directory.Build.props`
 - No additional setup required ✅
